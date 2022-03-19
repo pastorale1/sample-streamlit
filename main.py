@@ -1,50 +1,90 @@
+from multiprocessing import Condition
 import streamlit as st
-import io
-import requests
-import json
+import numpy as np
+import pandas as pd
 from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
+import time
 
-st.title('顔認識アプリ')
+st.title('Streamlit入門')
 
-subscription_key = 'a83a8206592f48969a51d1089e01d825'
-assert subscription_key
+st.write('DataFrame')
 
-face_api_url = 'https://papageno.cognitiveservices.azure.com/face/v1.0/detect'
+df = pd.DataFrame({
+    '1列目': [1, 2, 3, 4],
+    '2列目': [10, 50, 20, 30]
+})
+st.dataframe(df.style.highlight_max(axis=0), width=400, height=400)
 
-uploaded_file = st.file_uploader("Choose an image...", type='jpg')
+"""
+# 章
+## 節
+### 項
 
-if uploaded_file is not None:
-    img = Image.open(uploaded_file)
+```python
+import streamlit as st
+import numpy as np
+import pandas as pd
 
-    with io.BytesIO() as output:
-        img.save(output, format="JPEG")
-        binary_img = output.getvalue()  #バイナリ取得
+```
+"""
 
-    headers = {
-        'Content-Type':'application/octet-stream',
-        'Ocp-Apim-Subscription-Key': subscription_key
-    }
-    params = {
-        'returnFaceId': 'true',
-        'returnFaceAttributes': 'blur,exposure,noise,age,gender,facialhair,glasses,hair,makeup,accessories,occlusion,headpose,emotion,smile'
-    }
+st.latex(r'''
+     a + ar + a r^2 + a r^3 + \cdots + a r^{n-1} =
+     \sum_{k=0}^{n-1} ar^k =
+     a \left(\frac{1-r^{n}}{1-r}\right)
+     ''')
 
-    res = requests.post(face_api_url, params=params, headers=headers, data=binary_img)
-    results = res.json()
 
-    textcolor = (0, 255, 0)
-    textsize = 100
-    font = ImageFont.truetype("arial.ttf", size=textsize) 
+df = pd.DataFrame(
+    np.random.rand(10, 3),
+    columns=['a', 'b', 'c']  
+)
 
-    for result in results:
-        rect = result['faceRectangle']
-        gender = result['faceAttributes']['gender']
-        age = result['faceAttributes']['age']
-        text = str(gender) + ": " + str(int(age))
-        draw = ImageDraw.Draw(img)
-        draw.rectangle([(rect['left'],rect['top']),(rect['left']+rect['width'],rect['top']+rect['height'])], fill=None, outline='green', width=5)
-        draw.text((rect['left'],rect['top']-200), text , font=font, fill=textcolor, align='center')
-        
-    st.image(img, caption='Uploaded Image.', use_column_width=True)
+st.dataframe(df)
+st.line_chart(df)
+st.area_chart(df)
+st.bar_chart(df)
+
+if st.checkbox('Show Map'):
+    df = pd.DataFrame(
+        np.random.rand(100, 2)/[50, 50] + [36.3228, 139.0127],
+        columns=['lat', 'lon']  
+    )
+    st.map(df)
+
+if st.checkbox('Show Image'):
+    st.write('Display Image')
+    img = Image.open('sample.jpg')
+    st.image(img, caption='Rika taiken', use_column_width=True)
+st.write('selectbox')
+option = st.selectbox(
+    'あなたが好きな数字を教えてください。',
+    list(range(1,11))
+)
+'あなたの好きな数字は ', option, 'です。'
+
+left_column, right_column = st.columns(2)
+button = left_column.button('右カラムに文字を表示')
+if button:
+    right_column.write('ここは右カラム')
+
+st.write('Interctive widgets')
+text = st.sidebar.text_input('あなたの趣味をを教えてください。')
+condition = st.sidebar.slider('あなたの今の調子は？', 0 , 100, 50)
+
+'あなたの趣味:', text
+'コンディション：', condition
+
+expander = st.expander('問合せ')
+expander.write('問合せ内容を書く')
+
+st.write('プログレスバーの表示')
+'Start!!'
+
+lateset_iteration = st.empty()
+bar = st.progress(0)
+
+for i in range(100):
+    lateset_iteration.text(f'Iteration {i+1}')
+    bar.progress(i + 1)
+    time.sleep(0.1)
